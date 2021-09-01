@@ -64,21 +64,6 @@
 #define HWCAP_ISA_B  (1 << ('B' - 'A'))
 #endif
 
-#define read_csr(csr)                                           \
-({                                                              \
-        register unsigned long __v;                             \
-        __asm__ __volatile__ ("csrr %0, %1"                     \
-                              : "=r" (__v)                      \
-                              : "i" (csr)                       \
-                              : "memory");                      \
-        __v;                                                    \
-})
-
-uint32_t VM_Version::get_current_vector_length() {
-  assert(_features & CPU_V, "should not call this");
-  return (uint32_t)read_csr(CSR_VLENB);
-}
-
 void VM_Version::get_os_cpu_info() {
 
   uint64_t auxv = getauxval(AT_HWCAP);

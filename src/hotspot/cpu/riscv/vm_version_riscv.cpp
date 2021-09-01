@@ -33,7 +33,6 @@
 #include OS_HEADER_INLINE(os)
 
 const char* VM_Version::_uarch = "";
-uint32_t VM_Version::_initial_vector_length = 0;
 
 void VM_Version::initialize() {
   get_os_cpu_info();
@@ -102,16 +101,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
-  if (UseRVV) {
-    if (!(_features & CPU_V)) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = get_current_vector_length();
-    }
-  }
-
   if (UseRVB && !(_features & CPU_B)) {
     warning("RVB is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVB, false);
@@ -161,34 +150,9 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(ConditionalMoveLimit, 0);
   }
 
-  if (!UseRVV) {
-    FLAG_SET_DEFAULT(SpecialEncodeISOArray, false);
-  }
+  FLAG_SET_DEFAULT(SpecialEncodeISOArray, false);
 
-  if (!UseRVV && MaxVectorSize) {
-    FLAG_SET_DEFAULT(MaxVectorSize, 0);
-  }
-
-  if (!UseRVV) {
-    FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
-  }
-
-  if (UseRVV) {
-    if (FLAG_IS_DEFAULT(MaxVectorSize)) {
-      MaxVectorSize = _initial_vector_length;
-    } else if (MaxVectorSize < 16) {
-      warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
-      UseRVV = false;
-    } else if (is_power_of_2(MaxVectorSize)) {
-      if (MaxVectorSize > _initial_vector_length) {
-        warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
-                _initial_vector_length, _initial_vector_length);
-      }
-      MaxVectorSize = _initial_vector_length;
-    } else {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
-    }
-  }
+  FLAG_SET_DEFAULT(MaxVectorSize, 0);
 
   // disable prefetch
   if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {

@@ -28,18 +28,5 @@
 #include "vmreg_riscv.inline.hpp"
 
 address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
-  if (base_reg->is_VectorRegister()) {
-    assert(base_reg->is_concrete(), "must pass base reg");
-    int base_reg_enc = (base_reg->value() - ConcreteRegisterImpl::max_fpr) /
-                       VectorRegisterImpl::max_slots_per_register;
-    intptr_t offset_in_bytes = slot_idx * VMRegImpl::stack_slot_size;
-    address base_location = location(base_reg);
-    if (base_location != NULL) {
-      return base_location + offset_in_bytes;
-    } else {
-      return NULL;
-    }
-  } else {
-    return location(base_reg->next(slot_idx));
-  }
+  return location(base_reg->next(slot_idx));
 }

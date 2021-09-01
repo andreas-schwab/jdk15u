@@ -40,9 +40,7 @@ private:
 
 protected:
   static const char* _uarch;
-  static uint32_t _initial_vector_length;
   static void get_os_cpu_info();
-  static uint32_t get_current_vector_length();
 
 public:
   // Initialization

@@ -832,56 +832,8 @@ class StubGenerator: public StubCodeGenerator {
 
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
-  void copy_memory_v(Register s, Register d, Register count, Register tmp, int step) {
-    bool is_backward = step < 0;
-    int granularity = uabs(step);
-
-    const Register src = x30, dst = x31, vl = x14, cnt = x15, tmp1 = x16, tmp2 = x17;
-    assert_different_registers(s, d, cnt, vl, tmp, tmp1, tmp2);
-    Assembler::SEW sew = Assembler::elembytes_to_sew(granularity);
-    Label loop_forward, loop_backward, done;
-
-    __ mv(dst, d);
-    __ mv(src, s);
-    __ mv(cnt, count);
-
-    __ bind(loop_forward);
-    __ vsetvli(vl, cnt, sew, Assembler::m8);
-    if (is_backward) {
-      __ bne(vl, cnt, loop_backward);
-    }
-
-    __ vlex_v(v0, src, sew);
-    __ sub(cnt, cnt, vl);
-    __ slli(vl, vl, (int)sew);
-    __ add(src, src, vl);
-
-    __ vsex_v(v0, dst, sew);
-    __ add(dst, dst, vl);
-    __ bnez(cnt, loop_forward);
-
-    if (is_backward) {
-      __ j(done);
-
-      __ bind(loop_backward);
-      __ sub(tmp, cnt, vl);
-      __ slli(tmp, tmp, sew);
-      __ add(tmp1, s, tmp);
-      __ vlex_v(v0, tmp1, sew);
-      __ add(tmp2, d, tmp);
-      __ vsex_v(v0, tmp2, sew);
-      __ sub(cnt, cnt, vl);
-      __ bnez(cnt, loop_forward);
-      __ bind(done);
-    }
-  }
-
   void copy_memory(bool is_aligned, Register s, Register d,
                    Register count, Register tmp, int step) {
-    if (UseRVV) {
-      return copy_memory_v(s, d, count, tmp, step);
-    }
-
     bool is_backwards = step < 0;
     int granularity = uabs(step);
 
@@ -2852,111 +2804,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return entry;
   }
-
-  // Arguments:
-  //
-  // Input:
-  //   c_rarg0   - newArr address
-  //   c_rarg1   - oldArr address
-  //   c_rarg2   - newIdx
-  //   c_rarg3   - shiftCount
-  //   c_rarg4   - numIter
-  //
-  address generate_bigIntegerLeftShift() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "bigIntegerLeftShiftWorker");
-    address entry = __ pc();
-
-    Label loop, exit;
-
-    Register newArr        = c_rarg0;
-    Register oldArr        = c_rarg1;
-    Register newIdx        = c_rarg2;
-    Register shiftCount    = c_rarg3;
-    Register numIter       = c_rarg4;
-
-    Register shiftRevCount = c_rarg5;
-    Register oldArrNext    = t1;
-
-    __ beqz(numIter, exit);
-    __ shadd(newArr, newIdx, newArr, t0, 2);
-
-    __ li(shiftRevCount, 32);
-    __ sub(shiftRevCount, shiftRevCount, shiftCount);
-
-    __ bind(loop);
-    __ addi(oldArrNext, oldArr, 4);
-    __ vsetvli(t0, numIter, Assembler::e32, Assembler::m4);
-    __ vle32_v(v0, oldArr);
-    __ vle32_v(v4, oldArrNext);
-    __ vsll_vx(v0, v0, shiftCount);
-    __ vsrl_vx(v4, v4, shiftRevCount);
-    __ vor_vv(v0, v0, v4);
-    __ vse32_v(v0, newArr);
-    __ sub(numIter, numIter, t0);
-    __ shadd(oldArr, t0, oldArr, t1, 2);
-    __ shadd(newArr, t0, newArr, t1, 2);
-    __ bnez(numIter, loop);
-
-    __ bind(exit);
-    __ ret();
-
-    return entry;
-  }
-
-  // Arguments:
-  //
-  // Input:
-  //   c_rarg0   - newArr address
-  //   c_rarg1   - oldArr address
-  //   c_rarg2   - newIdx
-  //   c_rarg3   - shiftCount
-  //   c_rarg4   - numIter
-  //
-  address generate_bigIntegerRightShift() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "bigIntegerRightShiftWorker");
-    address entry = __ pc();
-
-    Label loop, exit;
-
-    Register newArr        = c_rarg0;
-    Register oldArr        = c_rarg1;
-    Register newIdx        = c_rarg2;
-    Register shiftCount    = c_rarg3;
-    Register numIter       = c_rarg4;
-    Register idx           = numIter;
-
-    Register shiftRevCount = c_rarg5;
-    Register oldArrNext    = c_rarg6;
-    Register newArrCur     = t0;
-    Register oldArrCur     = t1;
-
-    __ beqz(idx, exit);
-    __ shadd(newArr, newIdx, newArr, t0, 2);
-
-    __ li(shiftRevCount, 32);
-    __ sub(shiftRevCount, shiftRevCount, shiftCount);
-
-    __ bind(loop);
-    __ vsetvli(t0, idx, Assembler::e32, Assembler::m4);
-    __ sub(idx, idx, t0);
-    __ shadd(oldArrNext, idx, oldArr, t1, 2);
-    __ shadd(newArrCur, idx, newArr, t1, 2);
-    __ addi(oldArrCur, oldArrNext, 4);
-    __ vle32_v(v0, oldArrCur);
-    __ vle32_v(v4, oldArrNext);
-    __ vsrl_vx(v0, v0, shiftCount);
-    __ vsll_vx(v4, v4, shiftRevCount);
-    __ vor_vv(v0, v0, v4);
-    __ vse32_v(v0, newArrCur);
-    __ bnez(idx, loop);
-
-    __ bind(exit);
-    __ ret();
-
-    return entry;
-  }
 #endif
 
 #ifdef COMPILER2
@@ -3822,11 +3669,6 @@ class StubGenerator: public StubCodeGenerator {
       StubCodeMark mark(this, "StubRoutines", "montgomerySquare");
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
       StubRoutines::_montgomerySquare = g.generate_square();
-    }
-
-    if (UseRVVForBigIntegerShiftIntrinsics) {
-      StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
-      StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
 #endif
 

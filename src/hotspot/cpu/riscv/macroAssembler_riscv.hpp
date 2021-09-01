@@ -486,10 +486,6 @@ class MacroAssembler: public Assembler {
   int  pop_reg(unsigned int bitset, Register stack);
   void push_fp(FloatRegSet regs, Register stack) { if (regs.bits()) push_fp(regs.bits(), stack); }
   void pop_fp(FloatRegSet regs, Register stack) { if (regs.bits()) pop_fp(regs.bits(), stack); }
-#ifdef COMPILER2
-  void push_vp(VectorRegSet regs, Register stack) { if (regs.bits()) push_vp(regs.bits(), stack); }
-  void pop_vp(VectorRegSet regs, Register stack) { if (regs.bits()) pop_vp(regs.bits(), stack); }
-#endif // COMPILER2
 
   // Push and pop everything that might be clobbered by a native
   // runtime call except t0 and t1. (They are always
@@ -507,8 +503,8 @@ class MacroAssembler: public Assembler {
 
   void pusha();
   void popa();
-  void push_CPU_state(bool save_vectors = false, int vector_size_in_bytes = 0);
-  void pop_CPU_state(bool restore_vectors = false, int vector_size_in_bytes = 0);
+  void push_CPU_state();
+  void pop_CPU_state();
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
@@ -729,43 +725,6 @@ class MacroAssembler: public Assembler {
   void fcvt_w_d_safe(Register dst, FloatRegister src, Register tmp = t0);
   void fcvt_l_d_safe(Register dst, FloatRegister src, Register tmp = t0);
 
-  // vector load/store unit-stride instructions
-  void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
-    switch (sew) {
-      case Assembler::e64:
-        vle64_v(vd, base, vm);
-        break;
-      case Assembler::e32:
-        vle32_v(vd, base, vm);
-        break;
-      case Assembler::e16:
-        vle16_v(vd, base, vm);
-        break;
-      case Assembler::e8: // fall through
-      default:
-        vle8_v(vd, base, vm);
-        break;
-    }
-  }
-
-  void vsex_v(VectorRegister store_data, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
-    switch (sew) {
-      case Assembler::e64:
-        vse64_v(store_data, base, vm);
-        break;
-      case Assembler::e32:
-        vse32_v(store_data, base, vm);
-        break;
-      case Assembler::e16:
-        vse16_v(store_data, base, vm);
-        break;
-      case Assembler::e8: // fall through
-      default:
-        vse8_v(store_data, base, vm);
-        break;
-    }
-  }
-
   static const int zero_words_block_size;
 
   void cast_primitive_type(BasicType type, Register Rt) {
@@ -809,14 +768,6 @@ class MacroAssembler: public Assembler {
 
   int push_fp(unsigned int bitset, Register stack);
   int pop_fp(unsigned int bitset, Register stack);
-
-  int push_vp(unsigned int bitset, Register stack);
-  int pop_vp(unsigned int bitset, Register stack);
-
-  // vext
-  void vmnot_m(VectorRegister vd, VectorRegister vs);
-  void vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm = unmasked);
-  void vfneg_v(VectorRegister vd, VectorRegister vs);
 
 private:
   void load_prototype_header(Register dst, Register src);
