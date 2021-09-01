@@ -222,7 +222,6 @@ private:
   MacroAssembler* const _masm;
   RegSet                _gp_regs;
   RegSet                _fp_regs;
-  RegSet                _vp_regs;
 
 public:
   void initialize(ZLoadBarrierStubC2* stub) {
@@ -239,9 +238,6 @@ public:
           _gp_regs += RegSet::of(vm_reg->as_Register());
         } else if (vm_reg->is_FloatRegister()) {
           _fp_regs += RegSet::of((Register)vm_reg->as_FloatRegister());
-        } else if (vm_reg->is_VectorRegister()) {
-          const VMReg vm_reg_base = OptoReg::as_VMReg(opto_reg & ~(VectorRegisterImpl::max_slots_per_register - 1));
-          _vp_regs += RegSet::of((Register)vm_reg_base->as_VectorRegister());
         } else {
           fatal("Unknown register type");
         }
@@ -255,20 +251,17 @@ public:
   ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
       _masm(masm),
       _gp_regs(),
-      _fp_regs(),
-      _vp_regs() {
+      _fp_regs() {
     // Figure out what registers to save/restore
     initialize(stub);
 
     // Save registers
     __ push_reg(_gp_regs, sp);
     __ push_fp(_fp_regs, sp);
-    __ push_vp(_vp_regs, sp);
   }
 
   ~ZSaveLiveRegisters() {
     // Restore registers
-    __ pop_vp(_vp_regs, sp);
     __ pop_fp(_fp_regs, sp);
     __ pop_reg(_gp_regs, sp);
   }

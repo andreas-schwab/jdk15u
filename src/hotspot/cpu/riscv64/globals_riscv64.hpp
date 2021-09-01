@@ -95,6 +95,5 @@ define_pd_global(intx, InlineSmallCode,          2500);
   product(bool, UseConservativeFence, true,                             \
           "Extend i for r and o for w in the pred/succ flags of fence;" \
           "Extend fence.i to fence.i + fence.")                         \
-  product(bool, UseVExt, false, "Use RVV instructions")                 \
 
 #endif // CPU_RISCV64_GLOBALS_RISCV64_HPP

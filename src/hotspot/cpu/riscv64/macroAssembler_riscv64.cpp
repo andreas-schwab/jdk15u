@@ -748,18 +748,6 @@ void MacroAssembler::fneg_d(FloatRegister Rd, FloatRegister Rs) {
   fsgnjn_d(Rd, Rs, Rs);
 }
 
-void MacroAssembler::vmnot_m(VectorRegister vd, VectorRegister vs) {
-  vmnand_mm(vd, vs, vs);
-}
-
-void MacroAssembler::vncvt_x_x_w(VectorRegister vd, VectorRegister vs, VectorMask vm) {
-  vnsrl_wx(vd, vs, x0, vm);
-}
-
-void MacroAssembler::vfneg_v(VectorRegister vd, VectorRegister vs) {
-  vfsgnjn_vv(vd, vs, vs);
-}
-
 void MacroAssembler::la(Register Rd, const address &dest) {
   int64_t offset = dest - pc();
   if (is_offset_in_range(offset, 32)) {
@@ -1086,50 +1074,6 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
   return count;
 }
 
-#ifdef COMPILER2
-int MacroAssembler::push_vp(unsigned int bitset, Register stack) {
-  int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
-
-  // Scan bitset to accumulate register pairs
-  unsigned char regs[32];
-  int count = 0;
-  for (int reg = 31; reg >= 0; reg--) {
-    if ((1U << 31) & bitset) {
-      regs[count++] = reg;
-    }
-    bitset <<= 1;
-  }
-
-  for (int i = 0; i < count; i++) {
-    sub(stack, stack, vector_size_in_bytes);
-    vs1r_v(as_VectorRegister(regs[i]), stack);
-  }
-
-  return count * vector_size_in_bytes / wordSize;
-}
-
-int MacroAssembler::pop_vp(unsigned int bitset, Register stack) {
-  int vector_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
-
-  // Scan bitset to accumulate register pairs
-  unsigned char regs[32];
-  int count = 0;
-  for (int reg = 31; reg >= 0; reg--) {
-    if ((1U << 31) & bitset) {
-      regs[count++] = reg;
-    }
-    bitset <<= 1;
-  }
-
-  for (int i = count - 1; i >= 0; i--) {
-    vl1r_v(as_VectorRegister(regs[i]), stack);
-    add(stack, stack, vector_size_in_bytes);
-  }
-
-  return count * vector_size_in_bytes / wordSize;
-}
-#endif // COMPILER2
-
 void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
   // Push integer registers x7, x10-x17, x28-x31.
   push_reg(RegSet::of(x7) + RegSet::range(x10, x17) + RegSet::range(x28, x31) - exclude, sp);
@@ -1165,7 +1109,7 @@ void MacroAssembler::popa() {
   pop_reg(0xfffffffa, sp);
 }
 
-void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes) {
+void MacroAssembler::push_CPU_state() {
   // integer registers, except zr(x0) & ra(x1) & sp(x2)
   push_reg(0xfffffff8, sp);
 
@@ -1174,28 +1118,9 @@ void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes)
   for (int i = 0; i < 32; i++) {
     fsd(as_FloatRegister(i), Address(sp, i * wordSize));
   }
-
-  // vector registers
-  if (save_vectors) {
-    sub(sp, sp, vector_size_in_bytes * VectorRegisterImpl::number_of_registers);
-    vsetvli(t0, x0, Assembler::e64, Assembler::m8);
-    for (int i = 0; i < VectorRegisterImpl::number_of_registers; i += 8) {
-        add(t0, sp, vector_size_in_bytes * i);
-        vse64_v(as_VectorRegister(i), t0);
-    }
-  }
 }
 
-void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_bytes) {
-  // vector registers
-  if (restore_vectors) {
-    vsetvli(t0, x0, Assembler::e64, Assembler::m8);
-    for (int i = 0; i < VectorRegisterImpl::number_of_registers; i += 8) {
-      vle64_v(as_VectorRegister(i), sp);
-      add(sp, sp, vector_size_in_bytes * 8);
-    }
-  }
-
+void MacroAssembler::pop_CPU_state() {
   // float registers
   for (int i = 0; i < 32; i++) {
     fld(as_FloatRegister(i), Address(sp, i * wordSize));

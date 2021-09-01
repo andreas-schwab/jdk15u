@@ -28,13 +28,6 @@
 
 // C2_MacroAssembler contains high-level macros for C2
 
- private:
-  void element_compare(Register r1, Register r2,
-                       Register result, Register cnt,
-                       Register tmp1, Register tmp2,
-                       VectorRegister vr1, VectorRegister vr2,
-                       VectorRegister vrs,
-                       bool is_latin, Label& DONE);
  public:
 
   void string_compare(Register str1, Register str2,
@@ -100,11 +93,6 @@
          : fsw(f, Address(sp, offset));
   }
 
-  void spill(VectorRegister v, int offset) {
-    add(t0, sp, offset);
-    vs1r_v(v, t0);
-  }
-
   void unspill(Register r, bool is64, int offset) {
     is64 ? ld(r, Address(sp, offset))
          : lw(r, Address(sp, offset));
@@ -120,65 +108,9 @@
          : flw(f, Address(sp, offset));
   }
 
-  void unspill(VectorRegister v, int offset) {
-    add(t0, sp, offset);
-    vl1r_v(v, t0);
-  }
-
-  void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vec_reg_size_in_bytes) {
-    assert(vec_reg_size_in_bytes % 16 == 0, "unexpected vector reg size");
-    unspill(v0, src_offset);
-    spill(v0, dst_offset);
-  }
-
   void minmax_FD(FloatRegister dst,
                  FloatRegister src1, FloatRegister src2,
                  bool is_double, bool is_min);
 
-  // intrinsic methods implemented by rvv instructions
-  void string_equals_v(Register r1, Register r2,
-                       Register result, Register cnt1,
-                       int elem_size);
-
-  void arrays_equals_v(Register r1, Register r2,
-                       Register result, Register cnt1,
-                       int elem_size);
-
-  void string_compare_v(Register str1, Register str2,
-                        Register cnt1, Register cnt2,
-                        Register result,
-                        Register tmp1, Register tmp2,
-                        int encForm);
-
- void clear_array_v(Register base, Register cnt);
-
- void byte_array_inflate_v(Register src, Register dst,
-                           Register len, Register tmp);
-
- void char_array_compress_v(Register src, Register dst,
-                            Register len, Register result,
-                            Register tmp);
-
- void encode_iso_array_v(Register src, Register dst,
-                         Register len, Register result,
-                         Register tmp);
-
- void has_negatives_v(Register ary, Register len,
-                      Register result, Register tmp);
-
- void string_indexof_char_v(Register str1, Register cnt1,
-                            Register ch, Register result,
-                            Register tmp1, Register tmp2,
-                            bool isL);
-
- void minmax_FD_v(VectorRegister dst,
-                  VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min);
-
- void reduce_minmax_FD_v(FloatRegister dst,
-                         FloatRegister src1, VectorRegister src2,
-                         VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min);
-                         
 
 #endif // CPU_RISCV64_C2_MACROASSEMBLER_RISCV64_HPP

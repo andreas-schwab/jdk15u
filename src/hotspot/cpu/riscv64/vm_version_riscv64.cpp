@@ -88,27 +88,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
   ~VM_Version_StubGenerator() {}
-
-  address generate_getPsrInfo(address* fault_pc, address* continuation_pc) {
-    StubCodeMark mark(this, "VM_Version", "getPsrInfo_stub");
-#   define __ _masm->
-    address start = __ pc();
-
-    __ enter();
-
-    __ mv(x10, zr);
-    // read vlenb from CSR_VLENB, may sigill
-    *fault_pc = __ pc();
-    __ csrr(x10, CSR_VLENB);
-
-    *continuation_pc = __ pc();
-    __ leave();
-    __ ret();
-
-#   undef __
-
-    return start;
-  }
 };
 
 void VM_Version::get_processor_features() {
@@ -180,32 +159,6 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
   }
 
-  if (!FLAG_IS_DEFAULT(UseVExt) && UseVExt) {
-    // try to read vector register VLENB, if success, rvv is supported
-    // otherwise, csrr will trigger sigill
-    ResourceMark rm;
-
-    stub_blob = BufferBlob::create("getPsrInfo_stub", stub_size);
-    if (stub_blob == NULL) {
-      vm_exit_during_initialization("Unable to allocate getPsrInfo_stub");
-    }
-
-    CodeBuffer c(stub_blob);
-    VM_Version_StubGenerator g(&c);
-    getPsrInfo_stub = CAST_TO_FN_PTR(getPsrInfo_stub_t,
-                                     g.generate_getPsrInfo(&VM_Version::_checkvext_fault_pc, &VM_Version::_checkvext_continuation_pc));
-    _initial_vector_length = getPsrInfo_stub();
-  }
-
-  if (!_initial_vector_length) {
-    if (UseVExt) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseVExt, false);
-    }
-  } else if (FLAG_IS_DEFAULT(UseVExt)) {
-    UseVExt = true;
-  }
-
 #ifdef COMPILER2
   get_c2_processor_features();
 #endif // COMPILER2
@@ -221,30 +174,9 @@ void VM_Version::get_c2_processor_features() {
     FLAG_SET_DEFAULT(ConditionalMoveLimit, 0);
   }
 
-  if (!UseVExt) {
-    FLAG_SET_DEFAULT(SpecialEncodeISOArray, false);
-  }
+  FLAG_SET_DEFAULT(SpecialEncodeISOArray, false);
 
-  if (!UseVExt && MaxVectorSize) {
-    FLAG_SET_DEFAULT(MaxVectorSize, 0);
-  }
-
-  if (UseVExt) {
-    if (FLAG_IS_DEFAULT(MaxVectorSize)) {
-      MaxVectorSize = _initial_vector_length;
-    } else if (MaxVectorSize < 16) {
-      warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
-      UseVExt = false;
-    } else if (is_power_of_2(MaxVectorSize)) {
-      if (MaxVectorSize > _initial_vector_length) {
-        warning("Current system only supports max RVV vector length %d. Set MaxVectorSize to %d",
-                _initial_vector_length, _initial_vector_length);
-      }
-      MaxVectorSize = _initial_vector_length;
-    } else {
-      vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
-    }
-  }
+  FLAG_SET_DEFAULT(MaxVectorSize, 0);
 
   // disable prefetch
   if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {

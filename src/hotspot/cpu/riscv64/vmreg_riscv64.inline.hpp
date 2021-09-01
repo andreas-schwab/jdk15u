@@ -39,9 +39,4 @@ inline VMReg FloatRegisterImpl::as_VMReg() {
                              ConcreteRegisterImpl::max_gpr);
 }
 
-inline VMReg VectorRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding() * VectorRegisterImpl::max_slots_per_register) +
-                             ConcreteRegisterImpl::max_fpr);
-}
-
 #endif // CPU_RISCV64_VM_VMREG_RISCV64_INLINE_HPP
