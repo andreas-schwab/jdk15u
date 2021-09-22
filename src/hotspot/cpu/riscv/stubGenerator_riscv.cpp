@@ -3714,6 +3714,7 @@ class StubGenerator: public StubCodeGenerator {
     oop_maps->add_gc_map(the_pc - start, map);
 
     __ reset_last_Java_frame(true);
+    __ maybe_ifence();
 
     __ leave();
 

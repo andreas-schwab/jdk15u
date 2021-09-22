@@ -82,6 +82,7 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
   pop_reg(x10, sp);
 #endif
   reset_last_Java_frame(true);
+  maybe_ifence();
 
   // check for pending exceptions
   { Label L;
