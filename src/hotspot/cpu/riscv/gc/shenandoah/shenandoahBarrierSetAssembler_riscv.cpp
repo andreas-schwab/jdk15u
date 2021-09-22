@@ -48,7 +48,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
                                                        Register src, Register dst, Register count, RegSet saved_regs) {
   if (is_oop) {
     bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
-    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahIUBarrier || ShenandoahLoadRefBarrier) {
+    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahStoreValEnqueueBarrier || ShenandoahLoadRefBarrier) {
 
       Label done;
 
@@ -301,8 +301,8 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
   __ leave();
 }
 
-void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler* masm, Register dst, Register tmp) {
-  if (ShenandoahIUBarrier) {
+void ShenandoahBarrierSetAssembler::storeval_barrier(MacroAssembler* masm, Register dst, Register tmp) {
+  if (ShenandoahStoreValEnqueueBarrier) {
     __ push_call_clobbered_registers();
 
     satb_write_barrier_pre(masm, noreg, dst, xthread, tmp, true, false);
@@ -412,7 +412,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
   if (val == noreg) {
     BarrierSetAssembler::store_at(masm, decorators, type, Address(x13, 0), noreg, noreg, noreg);
   } else {
-    iu_barrier(masm, val, tmp1);
+    storeval_barrier(masm, val, tmp1);
     // G1 barrier needs uncompressed oop for region cross check.
     Register new_val = val;
     if (UseCompressedOops) {
