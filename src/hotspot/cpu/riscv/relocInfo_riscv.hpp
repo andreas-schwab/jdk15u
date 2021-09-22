@@ -31,8 +31,8 @@
   enum {
     // Relocations are byte-aligned.
     offset_unit        =  1,
-    // Must be at least 1 for RelocInfo::narrow_oop_in_const.
-    format_width       =  1
+    // We don't use format().
+    format_width       =  0
   };
 
  public:
