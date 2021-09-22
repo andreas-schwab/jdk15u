@@ -44,6 +44,7 @@ class riscv {
  friend class StubGenerator;
 
  private:
+  static address _get_previous_fp_entry;
   static address _get_previous_sp_entry;
 
   static address _f2i_fixup;
@@ -72,6 +73,10 @@ class riscv {
   static bool _completed;
 
  public:
+
+  static address get_previous_fp_entry() {
+    return _get_previous_fp_entry;
+  }
 
   static address get_previous_sp_entry() {
     return _get_previous_sp_entry;
