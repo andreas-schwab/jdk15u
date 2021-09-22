@@ -365,12 +365,6 @@ class MacroAssembler: public Assembler {
 
   void should_not_reach_here()                   { stop("should not reach here"); }
 
-  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
-                                                Register tmp,
-                                                int offset) {
-    return RegisterOrConstant(tmp);
-  }
-
   static address target_addr_for_insn(address insn_addr);
 
   // Required platform-specific helpers for Label::patch_instructions.
@@ -664,6 +658,10 @@ class MacroAssembler: public Assembler {
   void remove_frame(int framesize);
 
   void reserved_stack_check();
+
+  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
+                                                Register tmp,
+                                                int offset);
 
   void get_polling_page(Register dest, relocInfo::relocType rtype);
   address read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
