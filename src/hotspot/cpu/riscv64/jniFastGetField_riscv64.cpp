@@ -172,6 +172,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     int32_t tmp_offset = 0;
     __ la_patchable(t0, ExternalAddress(slow_case_addr), tmp_offset);
     __ jalr(x1, t0, tmp_offset);
+    __ maybe_ifence();
     __ leave();
     __ ret();
   }

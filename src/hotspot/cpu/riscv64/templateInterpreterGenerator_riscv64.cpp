@@ -1160,6 +1160,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Call the native method.
   __ jalr(x28);
   __ bind(native_return);
+  __ maybe_ifence();
   __ get_method(xmethod);
   // result potentially in x10 or f10
 
@@ -1209,6 +1210,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ mv(c_rarg0, xthread);
     __ mv(t1, CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ jalr(t1);
+    __ maybe_ifence();
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);

@@ -44,9 +44,8 @@ class MacroAssembler: public Assembler {
   virtual ~MacroAssembler() {}
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
-
-  // Place a fence.i after code may have been modified due to a safepoint.
-  void safepoint_ifence();
+  // fence.i may be needed because of a safepoint
+  void maybe_ifence() { ifence(); }
 
   // Alignment
   void align(int modulus);
@@ -838,9 +837,6 @@ private:
 
   void load_reserved(Register addr, enum operand_size size, Assembler::Aqrl acquire);
   void store_conditional(Register addr, Register new_val, enum operand_size size, Assembler::Aqrl release);
-
-  // Check the current thread doesn't need a cross modify fence.
-  void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 };
 
 #ifdef ASSERT

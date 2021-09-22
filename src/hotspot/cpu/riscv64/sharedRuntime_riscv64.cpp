@@ -358,10 +358,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   int32_t offset = 0;
   __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite)), offset);
   __ jalr(x1, t0, offset);
-
-  // Explicit fence.i required because fixup_callers_callsite may change the code
-  // stream.
-  __ safepoint_ifence();
+  __ maybe_ifence();
 
   __ pop_CPU_state();
   // restore sp
@@ -1090,6 +1087,7 @@ static void rt_call(MacroAssembler* masm, address dest) {
     int32_t offset = 0;
     __ la_patchable(t0, RuntimeAddress(dest), offset);
     __ jalr(x1, t0, offset);
+    __ maybe_ifence();
   }
 }
 
@@ -2007,7 +2005,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int32_t offset = 0;
     __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)), offset);
     __ jalr(x1, t0, offset);
-
+    __ maybe_ifence();
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
 
@@ -2771,6 +2769,8 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   oop_maps->add_gc_map( __ offset() - start, map);
 
+  __ maybe_ifence();
+
   // x10 contains the address we are going to jump to assuming no exception got installed
 
   // clear last_Java_sp
@@ -2895,10 +2895,7 @@ void OptoRuntime::generate_exception_blob() {
   int32_t offset = 0;
   __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)), offset);
   __ jalr(x1, t0, offset);
-
-
-  // handle_exception_C is a special VM call which does not require an explicit
-  // instruction sync afterwards.
+  __ maybe_ifence();
 
   // Set an oopmap for the call site.  This oopmap will only be used if we
   // are unwinding the stack.  Hence, all locations will be dead.

@@ -53,11 +53,6 @@ inline void OrderAccess::fence() {
   FULL_MEM_BARRIER;
 }
 
-inline void OrderAccess::cross_modify_fence_impl() {
-  asm volatile("fence.i" : : : "memory");
-  if (UseConservativeFence) {
-    asm volatile("fence ir, ir" : : : "memory");
-  }
-}
+inline void OrderAccess::cross_modify_fence() { }
 
 #endif // OS_CPU_LINUX_RISCV64_ORDERACCESS_LINUX_RISCV64_HPP
