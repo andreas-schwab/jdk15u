@@ -3321,7 +3321,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ beqz(t0, notFinal);
 
   const Register method = index;  // method must be xmethod
-  assert(method == xmethod, "Method must be xmethod for interpreter calling convention");
+  assert(method == xmethod, "methodOop must be xmethod for interpreter calling convention");
 
   // do the call - the index is actually the method to call
   // that is, f2 is a vtable index if !is_vfinal, else f2 is a Method*
@@ -3344,7 +3344,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   // profile this call
   __ profile_virtual_call(x10, xlocals, x13);
 
-  // get target Method & entry point
+  // get target methodOop & entry point
   __ lookup_virtual_method(x10, index, method);
   __ profile_arguments_type(x13, method, x14, true);
   __ jump_from_interpreted(method);
@@ -3478,7 +3478,7 @@ void TemplateTable::invokeinterface(int byte_no) {
                              xmethod, x30,
                              no_such_interface);
 
-  // xmethod: Method to call
+  // xmethod: methodOop to call
   // x12: receiver
   // Check for abstract method error
   // Note: This should be done more efficiently via a throw_abstract_method_error
@@ -3490,7 +3490,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // do the call
   // x12: receiver
-  // xmethod: Method
+  // xmethod: methodOop
   __ jump_from_interpreted(xmethod);
   __ should_not_reach_here();
 

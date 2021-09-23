@@ -51,7 +51,7 @@
 //    [padding               ]
 
 //    [methodData            ]                   = mdp()                mdx_offset
-//    [Method                ]                   = method()             method_offset
+//    [methodOop             ]                   = method()             method_offset
 
 //    [last esp              ]                   = last_sp()            last_sp_offset
 //    [old stack pointer     ]                     (sender_sp)          sender_sp_offset
