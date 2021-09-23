@@ -1446,7 +1446,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Generate stack overflow check
   if (UseStackBanging) {
-    __ bang_stack_with_offset(checked_cast<int>(StackOverflow::stack_shadow_zone_size()));
+    assert(StackOverflow::stack_shadow_zone_size() == (int)StackOverflow::stack_shadow_zone_size(), "must be same");
+    __ bang_stack_with_offset((int)StackOverflow::stack_shadow_zone_size());
   } else {
     Unimplemented();
   }
