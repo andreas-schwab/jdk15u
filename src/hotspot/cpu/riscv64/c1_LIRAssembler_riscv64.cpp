@@ -386,7 +386,7 @@ int LIR_Assembler::emit_deopt_handler() {
   return offset;
 }
 
-void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
+void LIR_Assembler::return_op(LIR_Opr result) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == x10, "word returns are in x10");
 
   // Pop the stack before the safepoint code
@@ -396,9 +396,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
     __ reserved_stack_check();
   }
 
-  code_stub->set_safepoint_offset(__ offset());
-  __ relocate(relocInfo::poll_return_type);
-  __ safepoint_poll(*code_stub->entry(), true /* at_return */, false /* acquire */, true /* in_nmethod */);
+  __ fetch_and_read_polling_page(t0, 0, relocInfo::poll_return_type);
   __ ret();
 }
 

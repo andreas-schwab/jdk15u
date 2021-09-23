@@ -25,9 +25,10 @@
 #ifndef CPU_RISCV64_GC_Z_ZGLOBALS_RISCV64_HPP
 #define CPU_RISCV64_GC_Z_ZGLOBALS_RISCV64_HPP
 
-const size_t ZPlatformGranuleSizeShift = 21; // 2MB
-const size_t ZPlatformHeapViews        = 3;
-const size_t ZPlatformCacheLineSize    = 64;
+const size_t ZPlatformGranuleSizeShift       = 21; // 2MB
+const size_t ZPlatformHeapViews               = 3;
+const size_t ZPlatformNMethodDisarmedOffset = 4;
+const size_t ZPlatformCacheLineSize          = 64;
 
 size_t ZPlatformAddressOffsetBits();
 size_t ZPlatformAddressMetadataShift();

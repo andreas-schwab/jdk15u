@@ -207,7 +207,4 @@
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }
 
-  // returns the sending frame, without applying any barriers
-  frame sender_raw(RegisterMap* map) const;
-
 #endif // CPU_RISCV64_FRAME_RISCV64_HPP

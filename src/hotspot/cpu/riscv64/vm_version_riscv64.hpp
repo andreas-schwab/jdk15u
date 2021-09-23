@@ -37,8 +37,6 @@ public:
   // Initialization
   static void initialize();
 
-  constexpr static bool supports_stack_watermark_barrier() { return true; }
-
   static bool is_checkvext_fault(address pc) {
     return pc != NULL && pc == _checkvext_fault_pc;
   }
