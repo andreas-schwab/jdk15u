@@ -74,6 +74,7 @@
 # include <poll.h>
 # include <pwd.h>
 # include <ucontext.h>
+# include <fpu_control.h>
 # include <unistd.h>
 
 #define REG_LR       1
