@@ -180,8 +180,10 @@ class Address {
     : _base(r),     _offset(o), _mode(base_plus_offset), _target(NULL) { }
   Address(Register r, unsigned long long o)
     : _base(r),     _offset(o), _mode(base_plus_offset), _target(NULL) { }
+#ifdef ASSERT
   Address(Register r, ByteSize disp)
-    : Address(r, in_bytes(disp)) {}
+    : _base(r), _offset(in_bytes(disp)), _mode(base_plus_offset), _target(NULL) { }
+#endif
   Address(address target, RelocationHolder const& rspec)
     : _base(noreg),
       _offset(0),
