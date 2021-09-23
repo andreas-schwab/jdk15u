@@ -1379,9 +1379,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // Make room for additional locals
   __ slli(t1, x13, 3);
   __ sub(t0, esp, t1);
-
-  // Padding between locals and fixed part of activation frame to ensure
-  // SP is always 16-byte aligned.
   __ andi(sp, t0, -16);
 
   // x13 - # of additional locals
