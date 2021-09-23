@@ -3194,6 +3194,11 @@ void TemplateTable::fast_xaccess(TosState state)
   __ sub(xbcp, xbcp, 1);
 }
 
+void TemplateTable::count_calls(Register method, Register temp)
+{
+  __ call_Unimplemented();
+}
+
 //-----------------------------------------------------------------------------
 // Calls
 
