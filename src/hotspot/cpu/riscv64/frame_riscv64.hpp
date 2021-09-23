@@ -62,7 +62,6 @@
 //    [last sp               ]
 //    [oop temp              ]                     (only for native calls)
 
-//    [padding               ]                     (to preserve machine SP alignment)
 //    [locals and parameters ]
 //                               <- sender sp
 // ------------------------------ Asm interpreter ----------------------------------------

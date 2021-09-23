@@ -138,12 +138,7 @@ void AbstractInterpreter::layout_activation(Method* method,
   // interpreter_frame_sender_sp interpreter_frame_sender_sp is
   // the original sp of the caller (the unextended_sp) and
   // sender_sp is fp+8/16 (32bit/64bit)
-  intptr_t* locals = NULL;
-  if (caller->is_interpreted_frame()) {
-    locals = caller->interpreter_frame_last_sp() + caller_actual_parameters - 1;
-  } else {
-    locals = interpreter_frame->sender_sp() + max_locals - 1;
-  }
+  intptr_t* locals = interpreter_frame->sender_sp() + max_locals - 1;
 
 #ifdef ASSERT
   if (caller->is_interpreted_frame()) {
