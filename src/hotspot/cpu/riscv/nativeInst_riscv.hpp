@@ -219,6 +219,9 @@ class NativeInstruction {
 
  public:
 
+  // unit test stuff
+  static void test() {}                 // override for testing
+
   inline friend NativeInstruction* nativeInstruction_at(address addr);
 
   static bool maybe_cpool_ref(address instr) {
@@ -373,6 +376,9 @@ class NativeMovConstReg: public NativeInstruction {
   void  verify();
   void  print();
 
+  // unit test stuff
+  static void test() {}
+
   // Creation
   inline friend NativeMovConstReg* nativeMovConstReg_at(address addr);
   inline friend NativeMovConstReg* nativeMovConstReg_before(address addr);
@@ -422,6 +428,9 @@ class NativeMovRegMem: public NativeInstruction {
 
   void verify();
   void print();
+
+  // unit test stuff
+  static void test() {}
 
  private:
   inline friend NativeMovRegMem* nativeMovRegMem_at (address addr);
