@@ -949,7 +949,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
   if (UseStackBanging) {
-    const int n_shadow_pages = StackOverflow::stack_shadow_zone_size() / os::vm_page_size();
+    const int n_shadow_pages = JavaThread::stack_shadow_zone_size() / os::vm_page_size();
     const int start_page = native_call ? n_shadow_pages : 1;
     const int page_size = os::vm_page_size();
     for (int pages = start_page; pages <= n_shadow_pages ; pages++) {
@@ -1245,7 +1245,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_reguard;
     __ lwu(t0, Address(xthread, in_bytes(JavaThread::stack_guard_state_offset())));
-    __ addi(t1, zr, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
+    __ addi(t1, zr, (u1)JavaThread::stack_guard_yellow_reserved_disabled);
     __ bne(t0, t1, no_reguard);
 
     __ pusha(); // only save smashed registers

@@ -1459,7 +1459,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Generate stack overflow check
   if (UseStackBanging) {
-    __ bang_stack_with_offset(StackOverflow::stack_shadow_zone_size());
+    __ bang_stack_with_offset(JavaThread::stack_shadow_zone_size());
   } else {
     Unimplemented();
   }
@@ -1809,7 +1809,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label reguard;
   Label reguard_done;
   __ lbu(t0, Address(xthread, JavaThread::stack_guard_state_offset()));
-  __ mv(t1, StackOverflow::stack_guard_yellow_reserved_disabled);
+  __ mv(t1, JavaThread::stack_guard_yellow_reserved_disabled);
   __ beq(t0, t1, reguard);
   __ bind(reguard_done);
 
