@@ -76,6 +76,8 @@ define_pd_global(intx, InlineSmallCode,          2500);
 
 #define ARCH_FLAGS(develop,                                             \
                    product,                                             \
+                   diagnostic,                                          \
+                   experimental,                                        \
                    notproduct,                                          \
                    range,                                               \
                    constraint)                                          \
