@@ -696,7 +696,7 @@ class MacroAssembler: public Assembler {
   void ctz_bit(Register Rd, Register Rs, Register Rtmp1 = t0, Register Rtmp2 = t1);
 
   void zero_words(Register base, u_int64_t cnt);
-  void zero_words(Register ptr, Register cnt);
+  address zero_words(Register ptr, Register cnt);
   void fill_words(Register base, Register cnt, Register value);
   void zero_memory(Register addr, Register len, Register tmp1);
 
@@ -754,6 +754,20 @@ class MacroAssembler: public Assembler {
   int pop_fp(unsigned int bitset, Register stack);
 
 private:
+
+#ifdef ASSERT
+  // Template short-hand support to clean-up after a failed call to trampoline
+  // call generation (see trampoline_call() below), when a set of Labels must
+  // be reset (before returning).
+  template<typename Label, typename... More>
+  void reset_labels(Label& lbl, More&... more) {
+    lbl.reset(); reset_labels(more...);
+  }
+  template<typename Label>
+  void reset_labels(Label& lbl) {
+    lbl.reset();
+  }
+#endif
   void load_prototype_header(Register dst, Register src);
   void repne_scan(Register addr, Register value, Register count, Register temp);
 

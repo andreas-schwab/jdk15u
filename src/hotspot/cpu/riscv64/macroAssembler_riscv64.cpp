@@ -3071,6 +3071,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
     if (!in_scratch_emit_size) {
       address stub = emit_trampoline_stub(offset(), entry.target());
       if (stub == NULL) {
+        postcond(pc() == badAddress);
         return NULL; // CodeCache is full
       }
     }
@@ -3084,6 +3085,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer* cbuf) {
     jal(pc());
   }
   // just need to return a non-null address
+  postcond(pc() != badAddress);
   return pc();
 }
 
@@ -3317,7 +3319,7 @@ const int MacroAssembler::zero_words_block_size = 8;
 // cnt:   Count in HeapWords.
 //
 // ptr, cnt, and t0 are clobbered.
-void MacroAssembler::zero_words(Register ptr, Register cnt)
+address MacroAssembler::zero_words(Register ptr, Register cnt)
 {
   assert(is_power_of_2(zero_words_block_size), "adjust this");
   assert(ptr == x28 && cnt == x29, "mismatch in register usage");
@@ -3331,7 +3333,12 @@ void MacroAssembler::zero_words(Register ptr, Register cnt)
     RuntimeAddress zero_blocks = RuntimeAddress(StubRoutines::riscv64::zero_blocks());
     assert(zero_blocks.target() != NULL, "zero_blocks stub has not been generated");
     if (StubRoutines::riscv64::complete()) {
-      trampoline_call(zero_blocks);
+      address tpc = trampoline_call(zero_blocks);
+      if (tpc == NULL) {
+        DEBUG_ONLY(reset_labels(around));
+        postcond(pc() == badAddress);
+        return NULL;
+      }
     } else {
       jal(zero_blocks);
     }
@@ -3355,6 +3362,8 @@ void MacroAssembler::zero_words(Register ptr, Register cnt)
     bind(l);
   }
   BLOCK_COMMENT("} zero_words");
+  postcond(pc() != badAddress);
+  return pc();
 }
 
 // base:         Address of a buffer to be zeroed, 8 bytes aligned.
@@ -3367,13 +3376,15 @@ void MacroAssembler::zero_words(Register base, u_int64_t cnt)
   BLOCK_COMMENT("zero_words {");
 
   if (cnt <= SmallArraySize / BytesPerLong) {
-    for (int i = 0; i < (int)cnt; i++)
+    for (int i = 0; i < (int)cnt; i++) {
       sd(zr, Address(base, i * wordSize));
+    }
   } else {
     const int unroll = 8; // Number of sd(zr, adr), instructions we'll unroll
     int remainder = cnt %  unroll;
-    for (int i = 0; i < remainder; i++)
+    for (int i = 0; i < remainder; i++) {
       sd(zr, Address(base, i * wordSize));
+    }
 
     Label loop;
     Register cnt_reg = t0;
@@ -3383,8 +3394,9 @@ void MacroAssembler::zero_words(Register base, u_int64_t cnt)
     add(loop_base, base, remainder * wordSize);
     bind(loop);
     sub(cnt_reg, cnt_reg, unroll);
-    for (int i = 0; i < unroll; i++)
+    for (int i = 0; i < unroll; i++) {
       sd(zr, Address(loop_base, i * wordSize));
+    }
     add(loop_base, loop_base, unroll * wordSize);
     bnez(cnt_reg, loop);
   }
