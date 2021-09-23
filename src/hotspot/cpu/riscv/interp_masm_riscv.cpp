@@ -862,7 +862,9 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be rarg1");
 
   if (UseHeavyMonitors) {
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
+    call_VM(noreg,
+            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
+            lock_reg);
   } else {
     Label done;
 
@@ -898,7 +900,9 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     // Call the runtime routine for slow case.
     sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
-    call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
+    call_VM(noreg,
+            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
+            lock_reg);
 
     bind(done);
 
