@@ -91,11 +91,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
-  }
-
   if (UseRVB && !(_features & CPU_B)) {
     warning("RVB is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVB, false);
