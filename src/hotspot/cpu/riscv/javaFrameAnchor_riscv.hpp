@@ -82,5 +82,7 @@ public:
   void set_last_Java_sp(intptr_t* java_sp)       { _last_Java_sp = java_sp; OrderAccess::release(); }
 
   intptr_t* last_Java_fp(void)                   { return _last_Java_fp; }
+  // Assert (last_Java_sp == NULL || fp == NULL)
+  void set_last_Java_fp(intptr_t* fp)                { OrderAccess::release(); _last_Java_fp = fp; }
 
 #endif // CPU_RISCV_JAVAFRAMEANCHOR_RISCV_HPP
