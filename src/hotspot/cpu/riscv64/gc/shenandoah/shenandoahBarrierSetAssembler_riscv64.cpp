@@ -474,10 +474,39 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
 // from-space, or it refers to the to-space version of an object that
 // is being evacuated out of from-space.
 //
-// By default the value held in the result register following execution
-// of the generated code sequence is 0 to indicate failure of CAS,
-// non-zero to indicate success. If is_cae, the result is the value most
-// recently fetched from addr rather than a boolean success indicator.
+// By default, this operation implements sequential consistency and the
+// value held in the result register following execution of the
+// generated code sequence is 0 to indicate failure of CAS, non-zero
+// to indicate success.  Arguments support variations on this theme:
+//
+//  acquire: Allow relaxation of the memory ordering on CAS from
+//           sequential consistency.  This can be useful when
+//           sequential consistency is not required, such as when
+//           another sequentially consistent operation is already
+//           present in the execution stream.  If acquire, successful
+//           execution has the side effect of assuring that memory
+//           values updated by other threads and "released" will be
+//           visible to any read operations perfomed by this thread
+//           which follow this operation in program order.  This is a
+//           special optimization that should not be enabled by default.
+//  release: Allow relaxation of the memory ordering on CAS from
+//           sequential consistency.  This can be useful when
+//           sequential consistency is not required, such as when
+//           another sequentially consistent operation is already
+//           present in the execution stream.  If release, successful
+//           completion of this operation has the side effect of
+//           assuring that all writes to memory performed by this
+//           thread that precede this operation in program order are
+//           visible to all other threads that subsequently "acquire"
+//           before reading the respective memory values.  This is a
+//           special optimization that should not be enabled by default.
+//  is_cae:  This turns CAS (compare and swap) into CAE (compare and
+//           exchange).  This HotSpot convention is that CAE makes
+//           available to the caller the "failure witness", which is
+//           the value that was stored in memory which did not match
+//           the expected value.  If is_cae, the result is the value
+//           most recently fetched from addr rather than a boolean
+//           success indicator.
 //
 // Clobbers t0, t1
 void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
