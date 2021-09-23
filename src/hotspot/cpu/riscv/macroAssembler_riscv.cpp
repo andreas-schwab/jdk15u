@@ -2120,16 +2120,26 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   Label search, found_method;
 
-  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset_in_bytes()));
-  beq(intf_klass, method_result, found_method);
-  bind(search);
-  // Check that the previous entry is non-null. A null entry means that
-  // the receiver class doens't implement the interface, and wasn't the
-  // same as when the caller was compiled.
-  beqz(method_result, L_no_such_interface, /* is_far */ true);
-  addi(scan_tmp, scan_tmp, scan_step);
-  ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset_in_bytes()));
-  bne(intf_klass, method_result, search);
+  for (int peel = 1; peel >= 0; peel--) {
+    ld(method_result, Address(scan_tmp, itableOffsetEntry::interface_offset_in_bytes()));
+
+    if (peel) {
+      beq(intf_klass, method_result, found_method);
+    } else {
+      bne(intf_klass, method_result, search);
+      // (invert the test to fall through to found_method...)
+    }
+
+    if (!peel)  break;
+
+    bind(search);
+
+    // Check that the previous entry is non-null. A null entry means that
+    // the receiver class doens't implement the interface, and wasn't the
+    // same as when the caller was compiled.
+    beqz(method_result, L_no_such_interface, /* is_far */ true);
+    addi(scan_tmp, scan_tmp, scan_step);
+  }
 
   bind(found_method);
 
