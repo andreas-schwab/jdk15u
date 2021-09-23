@@ -238,7 +238,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_not_null(MacroAssembl
   __ lbu(t1, gc_state);
 
   // Check for heap stability
-  __ andi(t0, t1, ShenandoahHeap::HAS_FORWARDED);
+  __ andi(t0, t1, ShenandoahHeap::EVACUATION);
   __ beqz(t0, done);
 
   // use x11 for load address
