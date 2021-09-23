@@ -2294,19 +2294,11 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
-      if (call == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
-      }
     } else {
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       call = __ trampoline_call(Address(addr, rspec), &cbuf);
-      if (call == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
-      }
 
       // Emit stub for static call
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
@@ -2314,6 +2306,10 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+    }
+    if (call == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
     }
   %}
 
@@ -10196,11 +10192,7 @@ instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy, iRegL
   format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}
 
   ins_encode %{
-    address tpc = __ zero_words($base$$Register, $cnt$$Register);
-    if (tpc == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    }
+    __ zero_words($base$$Register, $cnt$$Register);
   %}
 
   ins_pipe(pipe_class_memory);
