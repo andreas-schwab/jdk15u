@@ -1012,6 +1012,20 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
   }
 }
 
+
+// Check GCLocker::needs_gc and enter the runtime if it's true.  This
+// keeps a new JNI critical region from starting until a GC has been
+// forced.  Save down any oops in registers and describe them in an
+// OopMap.
+static void check_needs_gc_for_critical_native(MacroAssembler* masm,
+                                               int stack_slots,
+                                               int total_c_args,
+                                               int total_in_args,
+                                               int arg_save_area,
+                                               OopMapSet* oop_maps,
+                                               VMRegPair* in_regs,
+                                               BasicType* in_sig_bt) { Unimplemented(); }
+
 // Unpack an array argument into a pointer to the body and the length
 // if the array is non-null, otherwise pass 0 for both.
 static void unpack_array_argument(MacroAssembler* masm, VMRegPair reg, BasicType in_elem_type, VMRegPair body_arg, VMRegPair length_arg) { Unimplemented(); }
@@ -1468,6 +1482,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   const Register oop_handle_reg = x18;
 
+  if (is_critical_native) {
+    check_needs_gc_for_critical_native(masm, stack_slots, total_c_args, total_in_args,
+                                       oop_handle_offset, oop_maps, in_regs, in_sig_bt);
+  }
+
   //
   // We immediately shuffle the arguments so that any vm call we have to
   // make from here on out (sync slow path, jvmti, etc.) we will have
@@ -1737,13 +1756,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // get JNIEnv* which is first argument to native
   if (!is_critical_native) {
     __ la(c_rarg0, Address(xthread, in_bytes(JavaThread::jni_environment_offset())));
-
-    // Now set thread in native
-    __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
-    __ mv(t0, _thread_in_native);
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sw(t0, Address(t1));
   }
+
+  // Now set thread in native
+  __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
+  __ mv(t0, _thread_in_native);
+  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  __ sw(t0, Address(t1));
 
   rt_call(masm, native_func);
 
@@ -1755,21 +1774,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Unpack native results.
   if(ret_type != T_OBJECT && ret_type != T_ARRAY) {
     __ cast_primitive_type(ret_type, x10);
-  }
-
-  Label safepoint_in_progress, safepoint_in_progress_done;
-  Label after_transition;
-
-  // If this is a critical native, check for a safepoint or suspend request after the call.
-  // If a safepoint is needed, transition to native, then to native_trans to handle
-  // safepoints like the native methods that are not critical natives.
-  if (is_critical_native) {
-    Label needs_safepoint;
-    __ safepoint_poll(needs_safepoint, false /* at_return */, true /* acquire */, false /* in_nmethod */);
-    __ lwu(t0, Address(xthread, JavaThread::suspend_flags_offset()));
-    __ bnez(t0, needs_safepoint);
-    __ j(after_transition);
-    __ bind(needs_safepoint);
   }
 
   // Switch thread to "native transition" state before reading the synchronization state.
@@ -1787,6 +1791,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ membar(MacroAssembler::AnyAny);
 
   // check for safepoint operation in progress and/or pending suspend requests
+  Label safepoint_in_progress, safepoint_in_progress_done;
   {
     // We need an acquire here to ensure that any subsequent load of the
     // global SafepointSynchronize::_state flag is ordered after this load
@@ -1803,6 +1808,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // change thread state
+  Label after_transition;
   __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
   __ mv(t0, _thread_in_Java);
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
@@ -2004,11 +2010,21 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     int32_t offset = 0;
-    __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)), offset);
+    if (!is_critical_native) {
+      __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)), offset);
+    } else {
+      __ la_patchable(t0, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans_and_transition)), offset);
+    }
     __ jalr(x1, t0, offset);
     __ maybe_ifence();
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
+
+    if (is_critical_native) {
+      // The call above performed the transition to thread_in_Java so
+      // skip the transition logic above.
+      __ j(after_transition);
+    }
 
     __ j(safepoint_in_progress_done);
     __ block_comment("} safepoint");
@@ -2057,7 +2073,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                             in_ByteSize(lock_slot_offset*VMRegImpl::stack_slot_size),
                                             oop_maps);
   assert(nm != NULL, "create native nmethod fail!");
+
+  if (is_critical_native) {
+    nm->set_lazy_critical_native(true);
+  }
+
   return nm;
+
 }
 
 // this function returns the adjust size (in number of words) to a c2i adapter
