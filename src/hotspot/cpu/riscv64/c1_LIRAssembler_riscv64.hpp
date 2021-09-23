@@ -50,9 +50,6 @@ private:
   address double_constant(double d);
   address int_constant(jlong n);
 
-  // Ensure we have a valid Address (base + offset) to a stack-slot.
-  Address stack_slot_address(int index, uint shift, int adjust = 0);
-
   // Record the type of the receiver in ReceiverTypeData
   void type_profile_helper(Register mdo,
                            ciMethodData *md, ciProfileData *data,
