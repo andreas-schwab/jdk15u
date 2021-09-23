@@ -49,7 +49,7 @@ LIR_Opr LIR_OprFact::double_fpu(int reg1, int reg2) {
 void LIR_Address::verify() const {
   assert(base()->is_cpu_register(), "wrong base operand");
   assert(index()->is_illegal() || index()->is_double_cpu() || index()->is_single_cpu(), "wrong index operand");
-  assert(base()->type() == T_ADDRESS || base()->type() == T_OBJECT || base()->type() == T_LONG ||
+  assert(base()->type() == T_OBJECT || base()->type() == T_LONG ||
          base()->type() == T_METADATA, "wrong type for addresses");
 }
 #endif // PRODUCT
