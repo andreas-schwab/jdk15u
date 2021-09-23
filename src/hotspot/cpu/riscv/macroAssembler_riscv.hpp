@@ -44,7 +44,8 @@ class MacroAssembler: public Assembler {
   }
   virtual ~MacroAssembler() {}
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
+  void safepoint_poll(Label& slow_path);
+  void safepoint_poll_acquire(Label& slow_path);
   // fence.i may be needed because of a safepoint
   void maybe_ifence() { ifence(); }
 
@@ -658,6 +659,7 @@ class MacroAssembler: public Assembler {
 
   void get_polling_page(Register dest, relocInfo::relocType rtype);
   address read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
+  address fetch_and_read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
   address ic_call(address entry, jint method_index = 0);

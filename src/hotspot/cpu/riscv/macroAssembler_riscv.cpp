@@ -2205,17 +2205,29 @@ void MacroAssembler::check_klass_subtype(Register sub_klass,
   bind(L_failure);
 }
 
-void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod) {
-  ld(t0, Address(xthread, Thread::polling_word_offset()));
-  if (acquire) {
-    membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  }
-  if (at_return) {
-    bgtu(in_nmethod ? sp : fp, t0, slow_path, true /* is_far */);
-  } else {
-    andi(t0, t0, SafepointMechanism::poll_bit());
-    bnez(t0, slow_path, true /* is_far */);
-  }
+void MacroAssembler::safepoint_poll(Label& slow_path) {
+  ld(t0, Address(xthread, Thread::polling_page_offset()));
+  andi(t0, t0, SafepointMechanism::poll_bit());
+  bnez(t0, slow_path, true /* is_far */);
+}
+
+// Just like safepoint_poll, but use an acquiring load for thread-
+// local polling.
+//
+// We need an acquire here to ensure that any subsequent load of the
+// global SafepointSynchronize::_state flag is ordered after this load
+// of the local Thread::_polling page.  We don't want this poll to
+// return false (i.e. not safepointing) and a later poll of the global
+// SafepointSynchronize::_state spuriously to return true.
+//
+// This is to avoid a race when we're in a native->Java transition
+// racing the code which wakes up from a safepoint.
+//
+void MacroAssembler::safepoint_poll_acquire(Label& slow_path) {
+  ld(t0, Address(xthread, Thread::polling_page_offset()));
+  membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  andi(t0, t0, SafepointMechanism::poll_bit());
+  bnez(t0, slow_path, true /* is_far */);
 }
 
 void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
@@ -3053,6 +3065,13 @@ void MacroAssembler::reserved_stack_check() {
 // Move the address of the polling page into dest.
 void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype) {
   ld(dest, Address(xthread, JavaThread::polling_page_offset()));
+}
+
+// Move the address of the polling page into r, then read the polling
+// page.
+address MacroAssembler::fetch_and_read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype) {
+  get_polling_page(r, rtype);
+  return read_polling_page(r, offset, rtype);
 }
 
 // Read the polling page.  The address of the polling page must
