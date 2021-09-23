@@ -778,13 +778,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     // Load object pointer into obj_reg c_rarg3
     ld(obj_reg, Address(lock_reg, obj_offset));
 
-    if (DiagnoseSyncOnPrimitiveWrappers != 0) {
-      load_klass(tmp, obj_reg);
-      lwu(tmp, Address(tmp, Klass::access_flags_offset()));
-      andi(tmp, tmp, JVM_ACC_IS_BOX_CLASS);
-      bnez(tmp, slow_case);
-    }
-
     if (UseBiasedLocking) {
       biased_locking_enter(lock_reg, obj_reg, swap_reg, tmp, false, done, &slow_case);
     }
