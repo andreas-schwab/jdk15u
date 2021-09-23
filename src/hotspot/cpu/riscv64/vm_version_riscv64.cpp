@@ -149,11 +149,6 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
-  if (UseMD5Intrinsics) {
-    warning("MD5 intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, false);
-  }
-
 #ifdef COMPILER2
   get_c2_processor_features();
 #endif // COMPILER2
