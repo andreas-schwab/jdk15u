@@ -2460,15 +2460,15 @@ void MacroAssembler::load_prototype_header(Register dst, Register src) {
   ld(dst, Address(dst, Klass::prototype_header_offset()));
 }
 
-void MacroAssembler::biased_locking_enter(Register lock_reg,
-                                          Register obj_reg,
-                                          Register swap_reg,
-                                          Register tmp_reg,
-                                          bool swap_reg_contains_mark,
-                                          Label& done,
-                                          Label* slow_case,
-                                          BiasedLockingCounters* counters,
-                                          Register flag) {
+int MacroAssembler::biased_locking_enter(Register lock_reg,
+                                         Register obj_reg,
+                                         Register swap_reg,
+                                         Register tmp_reg,
+                                         bool swap_reg_contains_mark,
+                                         Label& done,
+                                         Label* slow_case,
+                                         BiasedLockingCounters* counters,
+                                         Register flag) {
   assert(UseBiasedLocking, "why call this otherwise?");
   assert_different_registers(lock_reg, obj_reg, swap_reg);
 
@@ -2487,7 +2487,9 @@ void MacroAssembler::biased_locking_enter(Register lock_reg,
   // pointers to allow age to be placed into low bits
   // First check to see whether biasing is even enabled for this object
   Label cas_label;
+  int null_check_offset = -1;
   if (!swap_reg_contains_mark) {
+    null_check_offset = offset();
     ld(swap_reg, mark_addr);
   }
   andi(tmp_reg, swap_reg, markWord::biased_lock_mask_in_place);
@@ -2644,6 +2646,8 @@ void MacroAssembler::biased_locking_enter(Register lock_reg,
   }
 
   bind(cas_label);
+
+  return null_check_offset;
 }
 
 void MacroAssembler::atomic_incw(Register counter_addr, Register tmp) {

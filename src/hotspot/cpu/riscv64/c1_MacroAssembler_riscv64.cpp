@@ -63,18 +63,11 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // save object being locked into the BasicObjectLock
   sd(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
 
-  null_check_offset = offset();
-
-  if (DiagnoseSyncOnPrimitiveWrappers != 0) {
-    load_klass(hdr, obj);
-    lwu(hdr, Address(hdr, Klass::access_flags_offset()));
-    andi(t0, hdr, JVM_ACC_IS_BOX_CLASS);
-    bnez(t0, slow_case, true /* is_far */);
-  }
-
   if (UseBiasedLocking) {
     assert(tmp != noreg, "should have tmp register at this point");
-    biased_locking_enter(disp_hdr, obj, hdr, tmp, false, done, &slow_case);
+    null_check_offset = biased_locking_enter(disp_hdr, obj, hdr, tmp, false, done, &slow_case);
+  } else {
+    null_check_offset = offset();
   }
 
   // Load object header
