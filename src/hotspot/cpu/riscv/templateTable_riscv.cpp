@@ -45,6 +45,12 @@
 
 #define __ _masm->
 
+// Platform-dependent initialization
+
+void TemplateTable::pd_initialize() {
+  // No riscv64 specific initialization
+}
+
 // Address computation: local variables
 
 static inline Address iaddress(int n) {
