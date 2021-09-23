@@ -47,10 +47,13 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 }
 
 bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava) {
+  assert(this->is_Java_thread(), "must be JavaThread");
+  JavaThread* jt = (JavaThread *)this;
+
   // If we have a last_Java_frame, then we should use it even if
   // isInJava == true.  It should be more reliable than ucontext info.
-  if (has_last_Java_frame() && frame_anchor()->walkable()) {
-    *fr_addr = pd_last_frame();
+  if (jt->has_last_Java_frame() && jt->frame_anchor()->walkable()) {
+    *fr_addr = jt->pd_last_frame();
     return true;
   }
 
@@ -75,10 +78,10 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
     }
 
     frame ret_frame(ret_sp, ret_fp, addr);
-    if (!ret_frame.safe_for_sender(this)) {
+    if (!ret_frame.safe_for_sender(jt)) {
 #ifdef COMPILER2
       frame ret_frame2(ret_sp, NULL, addr);
-      if (!ret_frame2.safe_for_sender(this)) {
+      if (!ret_frame2.safe_for_sender(jt)) {
         // nothing else to try if the frame isn't good
         return false;
       }
