@@ -354,7 +354,8 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
   JVM_FEATURES_CHECK_AVAILABILITY(shenandoahgc, [
     AC_MSG_CHECKING([if platform is supported by Shenandoah])
     if test "x$OPENJDK_TARGET_CPU_ARCH" = "xx86" || \
-        test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+        test "x$OPENJDK_TARGET_CPU" = "xaarch64" || \
+        test "x$OPENJDK_TARGET_CPU" = "xriscv64" ; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
@@ -396,6 +397,8 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
         AVAILABLE=false
       fi
     elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-aarch64"; then
+      AC_MSG_RESULT([yes])
+    elif test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-riscv64"; then
       AC_MSG_RESULT([yes])
     else
       AC_MSG_RESULT([no, $OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU])
