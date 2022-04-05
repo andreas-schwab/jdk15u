@@ -184,9 +184,12 @@ class Address {
   Address(Register r)
     : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(NULL) { }
 
-  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  Address(Register r, T o)
-    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(NULL) {}
+  Address(Register r, int o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(NULL) { }
+  Address(Register r, long o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(NULL) { }
+  Address(Register r, unsigned long o)
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(NULL) { }
 
 #ifdef ASSERT
   Address(Register r, ByteSize disp)

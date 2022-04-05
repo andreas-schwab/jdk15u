@@ -516,9 +516,20 @@ class MacroAssembler: public Assembler {
   }
 
   // mv
-  template<typename T, ENABLE_IF(std::is_integral<T>::value)>
-  inline void mv(Register Rd, T o) {
-    li(Rd, (int64_t)o);
+  inline void mv(Register Rd, u_int64_t imm64) {
+    li(Rd, (int64_t)imm64);
+  }
+
+  inline void mv(Register Rd, u_int32_t imm32) {
+    li(Rd, (int64_t)imm32);
+  }
+
+  inline void mv(Register Rd, long l) {
+    li(Rd, (int64_t)l);
+  }
+
+  inline void mv(Register Rd, int i) {
+    li(Rd, (int64_t)i);
   }
 
   inline void mvw(Register Rd, int32_t imm32) { mv(Rd, imm32); }
